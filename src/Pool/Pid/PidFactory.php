@@ -30,7 +30,7 @@ class PidFactory implements PidFactoryInterface
     }
 
     /**
-     * @param $pidDir
+     * @param string $pidDir
      * @throws NotFoundException
      */
     protected function setPidDir($pidDir)
