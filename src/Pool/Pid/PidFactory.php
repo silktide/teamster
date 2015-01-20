@@ -11,8 +11,14 @@ use Silktide\Teamster\Exception\NotFoundException;
 class PidFactory implements PidFactoryInterface
 {
 
+    /**
+     * @var string
+     */
     protected $pidDir;
 
+    /**
+     * @var array
+     */
     protected $invalidFileNameChars = ['/', ':', '@', ';', '#', '$', ' '];
 
     /**
