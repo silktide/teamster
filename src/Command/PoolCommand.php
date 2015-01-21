@@ -72,8 +72,25 @@ class PoolCommand extends Command
 
     protected function setServiceConfig(array $serviceConfig)
     {
-        // TODO validate service config
-        $this->serviceConfig = $serviceConfig;
+        $this->serviceConfig = [];
+        foreach ($serviceConfig as $command => $config) {
+            if (empty($config["type"]) || empty($config["command"]) || empty($config["instances"]) || (int) $config["instances"] <= 0) {
+                // malformed config, ignore
+                continue;
+            }
+            // create final config array for this command
+            $finalConfig = [
+                "command" => $config["command"],
+                "instances" => (int) $config["instances"],
+                "type" => $config["type"]
+            ];
+            // handle max run count
+            if (isset($config["maxRunCount"])) {
+                $finalConfig["maxRunCount"] = $config["maxRunCount"];
+            }
+            // add to the service config
+            $this->serviceConfig[$command] = $finalConfig;
+        }
     }
 
     /**

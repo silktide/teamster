@@ -78,6 +78,18 @@ class PoolCommandTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * @dataProvider serviceConfigProvider
+     *
+     * @param $serviceConfig
+     * @param $expectedConfig
+     */
+    public function testServiceConfig($serviceConfig, $expectedConfig)
+    {
+        $command = new PoolCommand("pool:command", "thread:command", $this->runnerFactory, $serviceConfig);
+        $this->assertAttributeEquals($expectedConfig, "serviceConfig", $command);
+    }
+
+    /**
      * @dataProvider executeProvider
      *
      * @param $testRuns
@@ -114,6 +126,84 @@ class PoolCommandTest extends \PHPUnit_Framework_TestCase
         // check the state of the pool
         $this->assertAttributeEquals($expectedPool, "pool", $command);
 
+    }
+
+    public function serviceConfigProvider()
+    {
+        return [
+            [ // test valid command config (with element reordering)
+                [
+                    "command" => [ // minimal
+                        "type" => "type",
+                        "command" => "command",
+                        "instances" => 1
+                    ],
+                    "command with max runs" => [ // inc maxRunCount
+                        "command" => "command",
+                        "instances" => 1,
+                        "type" => "type",
+                        "maxRunCount" => "10"
+                    ]
+                ],
+                [
+                    "command" => [
+                        "command" => "command",
+                        "instances" => 1,
+                        "type" => "type"
+                    ],
+                    "command with max runs" => [
+                        "command" => "command",
+                        "instances" => 1,
+                        "type" => "type",
+                        "maxRunCount" => 10
+                    ]
+                ]
+            ],
+            [ // test invalid command configs
+                [
+                    "no command" => [
+                        "instances" => 1,
+                        "type" => "type"
+                    ],
+                    "no type" => [
+                        "command" => "command",
+                        "instances" => 1
+                    ],
+                    "no instances" => [
+                        "command" => "command",
+                        "type" => "type"
+                    ],
+                    "bad instances" => [
+                        "command" => "command",
+                        "instances" => "NaN",
+                        "type" => "type"
+                    ]
+                ],
+                []
+            ],
+            [
+                [
+                    "removing other elements" => [
+                        "command" => "command",
+                        "removing" => "removing",
+                        "instances" => 1,
+                        "other" => "other",
+                        "type" => "type",
+                        "elements" => "elements",
+                        "maxRunCount" => 10,
+
+                    ]
+                ],
+                [
+                    "removing other elements" => [
+                        "command" => "command",
+                        "instances" => 1,
+                        "type" => "type",
+                        "maxRunCount" => 10
+                    ]
+                ]
+            ]
+        ];
     }
 
     public function executeProvider()
