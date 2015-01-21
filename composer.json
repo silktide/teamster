@@ -11,6 +11,7 @@
   ],
   "require": {
     "php": ">=5.3.0",
+    "ext-pcntl": "*",
     "silktide/syringe": "0.1.*",
     "downsider/puzzle-di": "0.1.*",
     "symfony/console": "2.6.*"

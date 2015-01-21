@@ -4,7 +4,7 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "ba1382e58c05e193017b1f6d2ed704df",
+    "hash": "49eb843940f272570a2388a6acd1dd67",
     "packages": [
         {
             "name": "downsider/puzzle-di",
@@ -1094,7 +1094,8 @@
     "stability-flags": [],
     "prefer-stable": false,
     "platform": {
-        "php": ">=5.3.0"
+        "php": ">=5.3.0",
+        "ext-pcntl": "*"
     },
     "platform-dev": []
 }
