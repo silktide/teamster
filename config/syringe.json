@@ -1,0 +1,54 @@
+{
+  "parameters": {
+    "pool.commandName": "silktide:teamster:pool",
+    "pool.serviceConfig": [],
+    "pool.pidFile": "",
+    "thread.commandName": "silktide:teamster:thread",
+    "pid.directory": "app/pid",
+    "consolePath": ""
+  },
+
+  "services": {
+    "pid.factory": {
+      "class": "Silktide\\Teamster\\Pool\\Pid\\PidFactory",
+      "arguments": [
+        "%pid.directory%"
+      ]
+    },
+
+    "runner.factory": {
+      "class": "Silktide\\Teamster\\Pool\\Runner\\RunnerFactory",
+      "arguments": [
+        "@pid.factory",
+        "%consolePath%"
+      ]
+    },
+
+    "poolControl.command": {
+      "class": "Silktide\\Teamster\\Command\\PoolControlCommand",
+      "arguments": [
+        "@runner.factory",
+        "%pool.pidFile%",
+        "%pool.commandName%"
+      ]
+    },
+
+    "pool.command": {
+      "class": "Silktide\\Teamster\\Command\\PoolCommand",
+      "arguments": [
+        "%pool.commandName%",
+        "%thread.commandName%",
+        "@runner.factory",
+        "%pool.serviceConfig%"
+      ]
+    },
+
+    "thread.command": {
+      "class": "Silktide\\Teamster\\Command\\ThreadCommand",
+      "arguments": [
+        "%thread.commandName%",
+        "@runner.factory"
+      ]
+    }
+  }
+}
