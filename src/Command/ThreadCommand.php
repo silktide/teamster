@@ -35,6 +35,7 @@ class ThreadCommand extends Command
     {
         $this->commandName = $commandName;
         $this->runnerFactory = $runnerFactory;
+        parent::__construct();
     }
 
     /**

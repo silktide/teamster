@@ -68,6 +68,7 @@ class PoolCommand extends Command
         $this->runnerFactory = $runnerFactory;
         $this->setServiceConfig($serviceConfig);
         $this->poolRefreshInterval = $poolRefreshInterval;
+        parent::__construct();
     }
 
     protected function setServiceConfig(array $serviceConfig)

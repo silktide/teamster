@@ -32,6 +32,7 @@ class PoolControlCommand extends Command
         $this->runnerFactory = $runnerFactory;
         $this->poolPidFile = $poolPidFile;
         $this->poolCommand = $poolCommand;
+        parent::__construct();
     }
 
     public function configure()
