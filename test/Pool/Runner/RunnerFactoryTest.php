@@ -9,7 +9,8 @@ use Silktide\Teamster\Pool\Runner\RunnerFactory;
 /**
  *
  */
-class RunnerFactoryTest extends \PHPUnit_Framework_TestCase {
+class RunnerFactoryTest extends \PHPUnit_Framework_TestCase
+{
 
     protected $pidFactory;
 

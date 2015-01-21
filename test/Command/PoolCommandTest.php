@@ -14,7 +14,8 @@ use Symfony\Component\Console\Input\InputDefinition;
 /**
  *
  */
-class PoolCommandTest extends \PHPUnit_Framework_TestCase {
+class PoolCommandTest extends \PHPUnit_Framework_TestCase
+{
 
     /**
      * @var \Mockery\Mock|RunnerFactory

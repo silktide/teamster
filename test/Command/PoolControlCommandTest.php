@@ -17,7 +17,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  *
  */
-class PoolControlCommandTest extends \PHPUnit_Framework_TestCase {
+class PoolControlCommandTest extends \PHPUnit_Framework_TestCase
+{
 
     protected $testDir = "test";
 
