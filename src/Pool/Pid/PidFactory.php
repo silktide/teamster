@@ -58,7 +58,7 @@ class PidFactory implements PidFactoryInterface
      */
     public function generatePidFileName($command)
     {
-        return str_replace($this->invalidFileNameChars, "", $command);
+        return str_replace($this->invalidFileNameChars, "", $command) . "-" . uniqid();
     }
 
 } 
