@@ -28,6 +28,7 @@
       "class": "Silktide\\Teamster\\Command\\PoolControlCommand",
       "arguments": [
         "@runner.factory",
+        "@pid.factory",
         "%pool.pidFile%",
         "%pool.commandName%"
       ]
@@ -38,6 +39,8 @@
       "arguments": [
         "%pool.commandName%",
         "%thread.commandName%",
+        "%pool.pidFile%",
+        "@pid.factory",
         "@runner.factory",
         "%pool.serviceConfig%"
       ]
