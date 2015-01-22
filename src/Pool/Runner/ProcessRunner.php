@@ -138,11 +138,11 @@ class ProcessRunner implements RunnerInterface
 
         while($this->maxRunCount == 0 || $runCount < $this->maxRunCount) {
 
+            $pid = null;
             //////// check if the process is already running ////////
             if (!empty($this->pidFile)) {
                 // if we have a PID file, check if it is in use
-                $pidFile = $this->pidFile;
-                $pid = $this->pidFactory->create($pidFile);
+                $pid = $this->pidFactory->create($this->pidFile);
                 $startTime = microtime(true);
                 // if another runner is running this process, loop until it has finished
                 do {
@@ -156,20 +156,24 @@ class ProcessRunner implements RunnerInterface
                     usleep(self::PROCESS_CHECK_INTERVAL * 10); // no need to check mercilessly
                 } while (microtime(true) - $startTime < $this->waitTimeout);
 
-            } else {
-                // create a new PID file name
-                $pidFile = $this->pidFactory->generatePidFileName($command);
             }
 
             //////// run the process ////////
             $this->resetPipes();
 
-            $startTime = microtime(true);
+            if (strpos($command, "exec") === false) {
+                // make sure we're not running bash first as it messes with the PID numbers accessible to PHP
+                $command = "exec $command";
+            }
+
             $this->process = proc_open($command, $this->descriptorSpec, $this->pipes);
 
-            // get the status for this process and create a PID file from it
-            $status = proc_get_status($this->process);
-            $pid = $this->pidFactory->create($pidFile, $status["pid"]);
+
+            // if we have a PID file path, get the status for this process and create a PID file from it
+            if (!empty($this->pidFile)) {
+                $status = proc_get_status($this->process);
+                $pid = $this->pidFactory->create($this->pidFile, $status["pid"]);
+            }
 
             // do processing on the pipes that have been created
             $this->processPipes();
@@ -186,6 +190,7 @@ class ProcessRunner implements RunnerInterface
                 $this->unblockPipes();
 
                 usleep(self::PROCESS_CHECK_INTERVAL);
+                pcntl_signal_dispatch();
                 $status = proc_get_status($this->process);
             } while (!empty($status["running"]) && microtime(true) - $startTime < $this->processTimeout);
 
@@ -195,6 +200,7 @@ class ProcessRunner implements RunnerInterface
                 // no need to count runs if we're running the command continuously
                 ++$runCount;
             }
+
         }
 
     }
@@ -248,7 +254,7 @@ class ProcessRunner implements RunnerInterface
         $status = proc_get_status($this->process);
         if ($status["running"]) {
             // terminate the process
-            proc_terminate($this->process);
+            proc_terminate($this->process, SIGTERM);
             do {
                 // ... and wait for confirmation
                 usleep(self::PROCESS_CHECK_INTERVAL);
