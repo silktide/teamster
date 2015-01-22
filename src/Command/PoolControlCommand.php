@@ -5,8 +5,10 @@
 namespace Silktide\Teamster\Command;
 
 use Silktide\Teamster\Exception\NotFoundException;
+use Silktide\Teamster\Exception\PidException;
 use Silktide\Teamster\Exception\ProcessException;
-use Silktide\Teamster\Pool\Runner\ProcessRunner;
+use Silktide\Teamster\Pool\Pid\Pid;
+use Silktide\Teamster\Pool\Pid\PidFactory;
 use Silktide\Teamster\Pool\Runner\RunnerFactory;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -19,17 +21,35 @@ use Symfony\Component\Console\Output\OutputInterface;
 class PoolControlCommand extends Command
 {
 
+    /**
+     * @var RunnerFactory
+     */
     protected $runnerFactory;
 
+    /**
+     * @var PidFactory
+     */
+    protected $pidFactory;
+
+    /**
+     * @var string
+     */
     protected $poolPidFile;
 
+    /**
+     * @var string
+     */
     protected $poolCommand;
 
+    /**
+     * @var Pid
+     */
     private $pid;
 
-    public function __construct(RunnerFactory $runnerFactory, $poolPidFile, $poolCommand)
+    public function __construct(RunnerFactory $runnerFactory, PidFactory $pidFactory, $poolPidFile, $poolCommand)
     {
         $this->runnerFactory = $runnerFactory;
+        $this->pidFactory = $pidFactory;
         $this->poolPidFile = $poolPidFile;
         $this->poolCommand = $poolCommand;
         parent::__construct();
@@ -54,14 +74,17 @@ class PoolControlCommand extends Command
                     $pid = $this->getPid();
 
                     // counter to prevent infinite loops
-                    $maxCount = 200;
+                    $maxCount = 100;
                     $count = 0;
 
                     // send the terminate signal
-                    posix_kill($pid, SIGTERM);
+                    $result = posix_kill($pid, SIGUSR1);
+                    if ($result === false) {
+                        throw new ProcessException("Could not send the terminate command to the pool, $pid");
+                    }
 
                     do {
-                        usleep(ProcessRunner::PROCESS_CHECK_INTERVAL);
+                        usleep(PoolCommand::DEFAULT_POOL_REFRESH_INTERVAL / 10);
                         ++$count;
                     } while ($this->isPoolRunning() && $count < $maxCount);
 
@@ -69,6 +92,9 @@ class PoolControlCommand extends Command
                     if ($count >= $maxCount) {
                         throw new ProcessException("Could not stop the pool");
                     }
+                    $output->writeln("<info>Pool stopped</info>");
+                } else {
+                    $output->writeln("<info>The pool was not running</info>");
                 }
                 if ($action == "stop") {
                     break;
@@ -80,8 +106,9 @@ class PoolControlCommand extends Command
                 if ($this->isPoolRunning()) {
                     throw new ProcessException("Pool is already running");
                 }
-                $runner = $this->runnerFactory->createRunner("console", $this->poolPidFile);
+                $runner = $this->runnerFactory->createRunner("console", $this->poolPidFile, 1);
                 $runner->execute($this->poolCommand, false);
+                $output->writeln("<info>Pool started</info>");
                 break;
 
         }
@@ -95,39 +122,38 @@ class PoolControlCommand extends Command
     {
         try {
             $pid = $this->getPid();
+        } catch (PidException $e) {
+            return false;
         } catch (NotFoundException $e) {
             return false;
         }
 
         // attempt to get the process exit status, if it hasn't exited this will return zero
-        return pcntl_waitpid($pid, $status, WNOHANG) == 0;
+        $pcntl = pcntl_waitpid($pid, $status, WNOHANG);
+        $posix = false;
+        // if we couldn't get the process, try the posix way
+        if ($pcntl == -1) {
+            $posix = posix_kill($pid, 0);
+        }
+        return $pcntl == 0 || $posix;
     }
 
     /**
+     * gets the PID number from the PID file and caches it
+     *
      * @param bool $skipCache
-     * @throws \Silktide\Teamster\Exception\ProcessException
-     * @throws \Silktide\Teamster\Exception\NotFoundException
      * @return int
      */
     protected function getPid($skipCache = false)
     {
         $skipCache = (bool) $skipCache;
-        if (!$skipCache && !empty($this->pid)) {
-            return $this->pid;
+        if (!$skipCache && !empty($this->pid) && $this->pid instanceof Pid) {
+            return $this->pid->getPid();
         }
-        // check if the pid file exists
-        if (!file_exists($this->poolPidFile)) {
-            throw new NotFoundException("The PID file doesn't exist");
-        }
-
-        // read pid file and check if the process is still running
-        $rawPid = file_get_contents($this->poolPidFile);
-        $pid = (int) $rawPid;
-        if (empty($pid)) {
-            throw new ProcessException("The Teamster pool PID file did not contain a valid PID: '$rawPid'");
-        }
+        $pid = $this->pidFactory->create($this->poolPidFile);
+        $pidNum = $pid->getPid();
         $this->pid = $pid;
-        return $pid;
+        return $pidNum;
     }
 
 } 
