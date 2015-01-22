@@ -73,7 +73,7 @@ class Pid implements PidInterface
      */
     public function cleanPid()
     {
-        return unlink($this->file);
+        return !file_exists($this->file) || unlink($this->file);
     }
 
 } 
