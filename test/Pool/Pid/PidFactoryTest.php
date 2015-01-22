@@ -95,7 +95,7 @@ class PidFactoryTest extends \PHPUnit_Framework_TestCase
 
         $factory = new PidFactory($this->getPath($pidDir));
 
-        $this->assertEquals($expected, $factory->generatePidFileName($path));
+        $this->assertContains($expected, $factory->generatePidFileName($path));
     }
 
 }

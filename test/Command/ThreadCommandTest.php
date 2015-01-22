@@ -43,7 +43,7 @@ class ThreadCommandTest extends \PHPUnit_Framework_TestCase
     protected $output;
 
     protected $argList = [
-        "command" => "runner:command",
+        "threadCommand" => "runner:command",
         "type" => "console",
         "maxRunCount" => 3
     ];
@@ -79,7 +79,7 @@ class ThreadCommandTest extends \PHPUnit_Framework_TestCase
             $this->input->shouldReceive("getArgument")->withArgs([$arg])->once()->andReturn($value);
         }
         $this->runnerFactory->shouldReceive("createRunner")->withArgs([$this->argList["type"], "", $this->argList["maxRunCount"]])->once();
-        $this->runner->shouldReceive("execute")->withArgs([$this->argList["command"]])->once();
+        $this->runner->shouldReceive("execute")->withArgs([$this->argList["threadCommand"]])->once();
 
         $command = new ThreadCommand("thread:command", $this->runnerFactory);
         $command->execute($this->input, $this->output);

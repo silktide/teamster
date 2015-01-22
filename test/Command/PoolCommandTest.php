@@ -7,6 +7,8 @@ namespace Silktide\Teamster\Test\Command;
 use Silktide\Teamster\Command\PoolCommand;
 use Silktide\Teamster\Pool\Runner\RunnerFactory;
 use Silktide\Teamster\Pool\Runner\RunnerInterface;
+use Silktide\Teamster\Pool\Pid\PidFactoryInterface;
+use Silktide\Teamster\Pool\Pid\PidInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -16,6 +18,16 @@ use Symfony\Component\Console\Input\InputDefinition;
  */
 class PoolCommandTest extends \PHPUnit_Framework_TestCase
 {
+
+    /**
+     * @var \Mockery\Mock|PidFactoryInterface
+     */
+    protected $pidFactory;
+
+    /**
+     * @var \Mockery\Mock|PidInterface
+     */
+    protected $pid;
 
     /**
      * @var \Mockery\Mock|RunnerFactory
@@ -59,19 +71,24 @@ class PoolCommandTest extends \PHPUnit_Framework_TestCase
         $this->runnerFactory->shouldReceive("createRunner")->withArgs(["console", "/^(?!completed-).*/", \Mockery::type("int")])->andReturn($this->runner);
         $this->runnerFactory->shouldReceive("createRunner")->withArgs(["console", "/^completed-/", \Mockery::type("int")])->andReturn($this->completedRunner);
 
+        $this->pid = \Mockery::mock("Silktide\\Teamster\\Pool\\Pid\\PidInterface")->shouldIgnoreMissing(true);
+        $this->pidFactory = \Mockery::mock("Silktide\\Teamster\\Pool\\Pid\\PidFactoryInterface");
+        $this->pidFactory->shouldReceive("create")->andReturn($this->pid);
+
         $this->inputDefinition = \Mockery::mock("Symfony\\Component\\Console\\Input\\InputDefinition");
 
         $this->input = \Mockery::mock("Symfony\\Component\\Console\\Input\\InputInterface");
-        $this->output = \Mockery::mock("Symfony\\Component\\Console\\Output\\OutputInterface");
+        $this->output = \Mockery::mock("Symfony\\Component\\Console\\Output\\OutputInterface")->shouldIgnoreMissing();
     }
 
     public function testConstruct()
     {
         $poolCommand = "pool:command";
+        $pidFile = "pool.pid";
 
         $this->inputDefinition->shouldReceive("addOption")->once();
 
-        $command = new PoolCommand($poolCommand, "thread:command", $this->runnerFactory, []);
+        $command = new PoolCommand($poolCommand, "thread:command", $pidFile, $this->pidFactory, $this->runnerFactory, []);
         $command->setDefinition($this->inputDefinition);
         $command->configure();
         $this->assertEquals($poolCommand, $command->getName());
@@ -85,7 +102,7 @@ class PoolCommandTest extends \PHPUnit_Framework_TestCase
      */
     public function testServiceConfig($serviceConfig, $expectedConfig)
     {
-        $command = new PoolCommand("pool:command", "thread:command", $this->runnerFactory, $serviceConfig);
+        $command = new PoolCommand("pool:command", "thread:command", "pool.pid", $this->pidFactory, $this->runnerFactory, $serviceConfig);
         $this->assertAttributeEquals($expectedConfig, "serviceConfig", $command);
     }
 
@@ -100,8 +117,8 @@ class PoolCommandTest extends \PHPUnit_Framework_TestCase
     {
         // insert runners into the expected pool (can't do this in the provider as it is called before setup())
         foreach ($expectedPool as $command => $list) {
-            foreach ($list as $i => $runnerName) {
-                switch ($runnerName) {
+            foreach ($list as $i => $expectedRunner) {
+                switch ($expectedRunner["runner"]) {
                     case "@runner":
                         $runner = $this->runner;
                         break;
@@ -111,7 +128,7 @@ class PoolCommandTest extends \PHPUnit_Framework_TestCase
                     default;
                         $runner = null;
                 }
-                $expectedPool[$command][$i] = $runner;
+                $expectedPool[$command][$i]["runner"] = $runner;
             }
         }
 
@@ -120,12 +137,36 @@ class PoolCommandTest extends \PHPUnit_Framework_TestCase
         $this->input->shouldReceive("getOption")->andReturn($testRuns);
 
         // run the command
-        $command = new PoolCommand("pool:command", "thread:command", $this->runnerFactory, $serviceConfig, 50000);
+        $command = new PoolCommand("pool:command", "thread:command", "pool.pid", $this->pidFactory, $this->runnerFactory, $serviceConfig, 50000);
         $command->execute($this->input, $this->output);
 
         // check the state of the pool
         $this->assertAttributeEquals($expectedPool, "pool", $command);
 
+    }
+
+    public function testDestruct()
+    {
+        $instances = 3;
+
+        $serviceConfig = [
+            "command" => [
+                "instances" => $instances,
+                "command" => "command",
+                "type" => "console"
+            ]
+        ];
+
+        // set up # test runs
+        $this->input->shouldReceive("hasOption")->andReturn(true);
+        $this->input->shouldReceive("getOption")->andReturn($instances);
+
+        // run the command
+        $command = new PoolCommand("pool:command", "thread:command", "pool.pid", $this->pidFactory, $this->runnerFactory, $serviceConfig, 50000);
+        $command->execute($this->input, $this->output);
+
+        $this->runner->shouldReceive("finish")->times(3);
+        $command->__destruct();
     }
 
     public function serviceConfigProvider()
@@ -220,7 +261,10 @@ class PoolCommandTest extends \PHPUnit_Framework_TestCase
                 ],
                 [
                     "command" => [
-                        "@runner"
+                        [
+                            "runner" => "@runner",
+                            "pidFile" => "command-0.pid"
+                        ]
                     ]
                 ]
             ],
@@ -235,8 +279,14 @@ class PoolCommandTest extends \PHPUnit_Framework_TestCase
                 ],
                 [
                     "command" => [
-                        "@runner",
-                        "@runner"
+                        [
+                            "runner" => "@runner",
+                            "pidFile" => "command-0.pid"
+                        ],
+                        [
+                            "runner" => "@runner",
+                            "pidFile" => "command-1.pid"
+                        ]
                     ]
                 ]
             ],
@@ -256,10 +306,16 @@ class PoolCommandTest extends \PHPUnit_Framework_TestCase
                 ],
                 [
                     "command1" => [
-                        "@runner"
+                        [
+                            "runner" => "@runner",
+                            "pidFile" => "command1-0.pid"
+                        ]
                     ],
                     "command2" => [
-                        "@runner"
+                        [
+                            "runner" => "@runner",
+                            "pidFile" => "command2-0.pid"
+                        ]
                     ]
                 ]
             ],
@@ -274,7 +330,10 @@ class PoolCommandTest extends \PHPUnit_Framework_TestCase
                 ],
                 [
                     "completed" => [
-                        "@completed"
+                        [
+                            "runner" => "@completed",
+                            "pidFile" => "completed-0.pid"
+                        ]
                     ]
                 ]
             ],

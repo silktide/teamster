@@ -3,6 +3,7 @@
  * Silktide Nibbler. Copyright 2013-2014 Silktide Ltd. All Rights Reserved.
  */
 namespace Silktide\Teamster\Test\Command;
+
 use org\bovigo\vfs\vfsStream;
 use org\bovigo\vfs\vfsStreamDirectory;
 use org\bovigo\vfs\vfsStreamWrapper;
@@ -11,6 +12,8 @@ use Silktide\Teamster\Exception\ProcessException;
 use Symfony\Component\Console\Input\InputDefinition;
 use Silktide\Teamster\Pool\Runner\RunnerInterface;
 use Silktide\Teamster\Pool\Runner\RunnerFactory;
+use Silktide\Teamster\Pool\Pid\PidFactoryInterface;
+use Silktide\Teamster\Pool\Pid\PidInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -33,6 +36,16 @@ class PoolControlCommandTest extends \PHPUnit_Framework_TestCase
     protected $runner;
 
     /**
+     * @var \Mockery\Mock|PidFactoryInterface
+     */
+    protected $pidFactory;
+
+    /**
+     * @var \Mockery\Mock|PidInterface
+     */
+    protected $pid;
+
+    /**
      * @var \Mockery\Mock|InputDefinition
      */
     protected $inputDefinition;
@@ -53,10 +66,14 @@ class PoolControlCommandTest extends \PHPUnit_Framework_TestCase
         $this->runnerFactory = \Mockery::mock("Silktide\\Teamster\\Pool\\Runner\\RunnerFactory");
         $this->runnerFactory->shouldReceive("createRunner")->andReturn($this->runner);
 
+        $this->pid = \Mockery::mock("Silktide\\Teamster\\Pool\\Pid\\PidInterface")->shouldIgnoreMissing(true);
+        $this->pidFactory = \Mockery::mock("Silktide\\Teamster\\Pool\\Pid\\PidFactoryInterface");
+        $this->pidFactory->shouldReceive("create")->andReturn($this->pid);
+
         $this->inputDefinition = \Mockery::mock("Symfony\\Component\\Console\\Input\\InputDefinition");
 
         $this->input = \Mockery::mock("Symfony\\Component\\Console\\Input\\InputInterface");
-        $this->output = \Mockery::mock("Symfony\\Component\\Console\\Output\\OutputInterface");
+        $this->output = \Mockery::mock("Symfony\\Component\\Console\\Output\\OutputInterface")->shouldIgnoreMissing();
 
         vfsStreamWrapper::register();
         vfsStreamWrapper::setRoot(new vfsStreamDirectory($this->testDir));
@@ -71,7 +88,7 @@ class PoolControlCommandTest extends \PHPUnit_Framework_TestCase
     {
         $pidFile = "pid.pid";
         $poolCommand = "pool:command";
-        $command = new PoolControlCommand($this->runnerFactory, $pidFile, $poolCommand);
+        $command = new PoolControlCommand($this->runnerFactory, $this->pidFactory, $pidFile, $poolCommand);
         $command->setDefinition($this->inputDefinition);
         $this->inputDefinition->shouldReceive("addArgument")->once();
 
@@ -83,14 +100,13 @@ class PoolControlCommandTest extends \PHPUnit_Framework_TestCase
     {
         $this->input->shouldReceive("getArgument")->andReturn("start");
 
-        $pidFilePath = "test.pid";
-        $pidFile = vfsStream::newFile($pidFilePath, 0777);
-        vfsStreamWrapper::getRoot()->addChild($pidFile);
+        $pid = getmypid();
+        $this->pid->shouldReceive("getPid")->andReturn($pid);
 
         $poolCommand = "pool:command";
 
         // test when pool is already running
-        $command = new PoolControlCommand($this->runnerFactory, $this->getPath($pidFilePath), $poolCommand);
+        $command = new PoolControlCommand($this->runnerFactory, $this->pidFactory, "pool.pid", $poolCommand);
         try {
             $command->execute($this->input, $this->output);
             $this->fail("Should not be able to start a pool when one is already running");
@@ -99,8 +115,17 @@ class PoolControlCommandTest extends \PHPUnit_Framework_TestCase
         }
 
         // test when pool is stopped
+        $noPidFile = "no.pid";
+
+        $noPid = \Mockery::mock("Silktide\\Teamster\\Pool\\Pid\\PidInterface")->shouldIgnoreMissing(true);
+        $noPid->shouldReceive("getPid")->atLeast()->times(1)->andThrow("Silktide\\Teamster\\Exception\\PidException");
+
+        $noPidFactory = \Mockery::mock("Silktide\\Teamster\\Pool\\Pid\\PidFactoryInterface");
+        $noPidFactory->shouldReceive("create")->withArgs([$noPidFile])->once()->andReturn($noPid);
+
         $this->runner->shouldReceive("execute")->withArgs([$poolCommand, false])->once();
-        $command = new PoolControlCommand($this->runnerFactory, $pidFilePath, $poolCommand);
+
+        $command = new PoolControlCommand($this->runnerFactory, $noPidFactory, $noPidFile, $poolCommand);
         $command->execute($this->input, $this->output);
     }
 
@@ -116,7 +141,7 @@ class PoolControlCommandTest extends \PHPUnit_Framework_TestCase
         $startTime = $this->startChildProcess($timeout, $pidFilePath);
 
         // create command
-        $command = new PoolControlCommand($this->runnerFactory, $this->getPath($pidFilePath) , "pool:command");
+        $command = new PoolControlCommand($this->runnerFactory, $this->pidFactory, $this->getPath($pidFilePath) , "pool:command");
 
         // run the stop command
         $command->execute($this->input, $this->output);
@@ -143,7 +168,7 @@ class PoolControlCommandTest extends \PHPUnit_Framework_TestCase
         $startTime = $this->startChildProcess($timeout, $pidFilePath);
 
         // create command
-        $command = new PoolControlCommand($this->runnerFactory, $this->getPath($pidFilePath) , $poolCommand);
+        $command = new PoolControlCommand($this->runnerFactory, $this->pidFactory, $this->getPath($pidFilePath) , $poolCommand);
 
         // run the stop command
         $command->execute($this->input, $this->output);
