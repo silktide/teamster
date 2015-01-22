@@ -8,7 +8,7 @@ use Silktide\Teamster\Exception\NotFoundException;
 use Silktide\Teamster\Exception\PidException;
 use Silktide\Teamster\Exception\ProcessException;
 use Silktide\Teamster\Pool\Pid\Pid;
-use Silktide\Teamster\Pool\Pid\PidFactory;
+use Silktide\Teamster\Pool\Pid\PidFactoryInterface;
 use Silktide\Teamster\Pool\Runner\RunnerFactory;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -27,7 +27,7 @@ class PoolControlCommand extends Command
     protected $runnerFactory;
 
     /**
-     * @var PidFactory
+     * @var PidFactoryInterface
      */
     protected $pidFactory;
 
@@ -46,7 +46,7 @@ class PoolControlCommand extends Command
      */
     private $pid;
 
-    public function __construct(RunnerFactory $runnerFactory, PidFactory $pidFactory, $poolPidFile, $poolCommand)
+    public function __construct(RunnerFactory $runnerFactory, PidFactoryInterface $pidFactory, $poolPidFile, $poolCommand)
     {
         $this->runnerFactory = $runnerFactory;
         $this->pidFactory = $pidFactory;

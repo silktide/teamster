@@ -4,7 +4,7 @@
  */
 namespace Silktide\Teamster\Command;
 
-use Silktide\Teamster\Pool\Pid\PidFactory;
+use Silktide\Teamster\Pool\Pid\PidFactoryInterface;
 use Silktide\Teamster\Pool\Runner\RunnerFactory;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -36,7 +36,7 @@ class PoolCommand extends Command
     protected $poolPidFile;
 
     /**
-     * @var PidFactory
+     * @var PidFactoryInterface
      */
     protected $pidFactory;
 
@@ -69,7 +69,7 @@ class PoolCommand extends Command
      * @param string $poolCommandName
      * @param string $threadCommandName
      * @param string $poolPidFile
-     * @param PidFactory $pidFactory
+     * @param PidFactoryInterface $pidFactory
      * @param RunnerFactory $runnerFactory
      * @param array $serviceConfig
      * @param int $poolRefreshInterval
@@ -78,7 +78,7 @@ class PoolCommand extends Command
         $poolCommandName,
         $threadCommandName,
         $poolPidFile,
-        PidFactory $pidFactory,
+        PidFactoryInterface $pidFactory,
         RunnerFactory $runnerFactory,
         array $serviceConfig,
         $poolRefreshInterval = self::DEFAULT_POOL_REFRESH_INTERVAL
