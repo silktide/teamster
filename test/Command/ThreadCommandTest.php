@@ -52,7 +52,7 @@ class ThreadCommandTest extends \PHPUnit_Framework_TestCase
     {
         $this->runner = \Mockery::mock("Silktide\\Teamster\\Pool\\Runner\\RunnerInterface")->shouldIgnoreMissing();
 
-        $this->runnerFactory = \Mockery::mock("Silktide\\Teamster\\Pool\\Runner\\RunnerFactory");
+        $this->runnerFactory = \Mockery::mock("Silktide\\Teamster\\Pool\\Runner\\RunnerFactory")->shouldIgnoreMissing();
         $this->runnerFactory->shouldReceive("createRunner")->andReturn($this->runner);
 
         $this->inputDefinition = \Mockery::mock("Symfony\\Component\\Console\\Input\\InputDefinition");
