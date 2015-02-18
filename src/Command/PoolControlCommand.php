@@ -21,6 +21,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 class PoolControlCommand extends Command
 {
 
+    const DEFAULT_WAIT_TIMEOUT = 20000000; // 20 seconds in microseconds
+
     /**
      * @var RunnerFactory
      */
@@ -42,16 +44,27 @@ class PoolControlCommand extends Command
     protected $poolCommand;
 
     /**
+     * @var int
+     */
+    protected $waitTimeout;
+
+    /**
      * @var Pid
      */
     private $pid;
 
-    public function __construct(RunnerFactory $runnerFactory, PidFactoryInterface $pidFactory, $poolPidFile, $poolCommand)
-    {
+    public function __construct(
+        RunnerFactory $runnerFactory,
+        PidFactoryInterface $pidFactory,
+        $poolPidFile,
+        $poolCommand,
+        $waitTimeout = self::DEFAULT_WAIT_TIMEOUT
+    ) {
         $this->runnerFactory = $runnerFactory;
         $this->pidFactory = $pidFactory;
         $this->poolPidFile = $poolPidFile;
         $this->poolCommand = $poolCommand;
+        $this->waitTimeout = (int) $waitTimeout;
         parent::__construct();
     }
 
@@ -74,7 +87,8 @@ class PoolControlCommand extends Command
                     $pid = $this->getPid();
 
                     // counter to prevent infinite loops
-                    $maxCount = 100;
+                    $maxCount = 1000;
+                    $interval = $this->waitTimeout / $maxCount;
                     $count = 0;
 
                     // send the terminate signal
@@ -84,7 +98,7 @@ class PoolControlCommand extends Command
                     }
 
                     do {
-                        usleep(PoolCommand::DEFAULT_POOL_REFRESH_INTERVAL / 10);
+                        usleep($interval);
                         ++$count;
                     } while ($this->isPoolRunning() && $count < $maxCount);
 
