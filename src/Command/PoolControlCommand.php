@@ -44,6 +44,11 @@ class PoolControlCommand extends Command
     protected $poolCommand;
 
     /**
+     * @var bool
+     */
+    protected $canRunAsRoot;
+
+    /**
      * @var int
      */
     protected $waitTimeout;
@@ -58,12 +63,14 @@ class PoolControlCommand extends Command
         PidFactoryInterface $pidFactory,
         $poolPidFile,
         $poolCommand,
+        $canRunAsRoot = false,
         $waitTimeout = self::DEFAULT_WAIT_TIMEOUT
     ) {
         $this->runnerFactory = $runnerFactory;
         $this->pidFactory = $pidFactory;
         $this->poolPidFile = $poolPidFile;
         $this->poolCommand = $poolCommand;
+        $this->canRunAsRoot = $canRunAsRoot;
         $this->waitTimeout = (int) $waitTimeout;
         parent::__construct();
     }
@@ -116,6 +123,10 @@ class PoolControlCommand extends Command
                 // if "restart" then fall through
                 // no break
             case "start":
+                // check who we're running as
+                if (posix_getuid() === 0 && !$this->canRunAsRoot) {
+                    throw new ProcessException("Cannot run the pool as the root user");
+                }
                 // start the pool in a new process
                 if ($this->isPoolRunning()) {
                     throw new ProcessException("Pool is already running");

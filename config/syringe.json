@@ -5,7 +5,8 @@
     "pool.pidFile": "",
     "thread.commandName": "silktide:teamster:thread",
     "pid.directory": "app/pid",
-    "consolePath": ""
+    "consolePath": "",
+    "canRunAsRoot": false
   },
 
   "services": {
@@ -30,7 +31,8 @@
         "@runner.factory",
         "@pid.factory",
         "%pool.pidFile%",
-        "%pool.commandName%"
+        "%pool.commandName%",
+        "%canRunAsRoot%"
       ]
     },
 
