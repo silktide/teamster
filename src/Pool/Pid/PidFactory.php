@@ -35,6 +35,10 @@ class PidFactory implements PidFactoryInterface
      */
     protected function setPidDir($pidDir)
     {
+        if (!is_dir($pidDir)) {
+            mkdir($pidDir);
+        }
+
         if (!is_dir($pidDir) || !is_writable($pidDir)) {
             throw new NotFoundException("Cannot write to the PID directory, '$pidDir'");
         }
