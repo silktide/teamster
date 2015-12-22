@@ -30,19 +30,21 @@ class PidFactoryTest extends \PHPUnit_Framework_TestCase
         return vfsStream::url($this->testDir . "/" . $path);
     }
 
+    public function testCreatingPidDir()
+    {
+        $pidDir = "pid";
+        $pidDirPath = $this->getPath($pidDir);
+
+        // test missing dir is created
+        new PidFactory($pidDirPath);
+        $this->assertFileExists($pidDirPath);
+    }
+
     public function testSettingPidDir()
     {
         $pidDir = "pid";
         $realPidDir = "real_pid";
         $pidDirPath = $this->getPath($pidDir);
-
-        // test missing dir
-        try {
-            $factory = new PidFactory($pidDirPath);
-            $this->fail("Should not be able to continue with a non-existent PID directory");
-        } catch (NotFoundException $e) {
-            $this->assertContains($pidDir, $e->getMessage());
-        }
 
         $vfs = vfsStreamWrapper::getRoot();
 
