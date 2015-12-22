@@ -140,7 +140,7 @@ class ProcessRunnerTest extends \PHPUnit_Framework_TestCase
         $spec = $this->setupOutFile($outFile);
 
         // setup command
-        $timeout = 50000; // micro seconds
+        $timeout = 200000; // micro seconds
         $command = "php -r \"usleep($timeout); echo '$output';\"";
 
         // do the test
