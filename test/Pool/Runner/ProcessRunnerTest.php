@@ -1,12 +1,9 @@
 <?php
-/**
- * Silktide Nibbler. Copyright 2013-2014 Silktide Ltd. All Rights Reserved.
- */
+
 namespace Silktide\Teamster\Test\Pool\Runner;
 
 use Silktide\Teamster\Pool\Runner\ProcessRunner;
 use Silktide\Teamster\Pool\Pid\PidInterface;
-
 
 /**
  *
