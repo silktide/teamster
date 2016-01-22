@@ -1,7 +1,5 @@
 <?php
-/**
- * Silktide Nibbler. Copyright 2013-2014 Silktide Ltd. All Rights Reserved.
- */
+
 namespace Silktide\Teamster\Pool\Runner;
 
 use Silktide\Teamster\Exception\PidException;
@@ -19,7 +17,7 @@ class ProcessRunner implements RunnerInterface
     const STDOUT = 1;
     const STDERR = 2;
 
-    const PROCESS_CHECK_INTERVAL = 100; // micro seconds
+    const PROCESS_CHECK_INTERVAL = 250000; // micro seconds
     const DEFAULT_WAIT_TIMEOUT = 20; // time to wait for an existing process to finish, in seconds
     const DEFAULT_PROCESS_TIMEOUT = 20; // time to wait for our new process to finish, in seconds
 
@@ -153,7 +151,7 @@ class ProcessRunner implements RunnerInterface
                         // process not running, exit the loop
                         break;
                     }
-                    usleep(self::PROCESS_CHECK_INTERVAL * 10); // no need to check mercilessly
+                    usleep(self::PROCESS_CHECK_INTERVAL);
                 } while (microtime(true) - $startTime < $this->waitTimeout);
 
             }
