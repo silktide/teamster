@@ -33,6 +33,9 @@
         "%pool.pidFile%",
         "%pool.commandName%",
         "%canRunAsRoot%"
+      ],
+      "tags": [
+        "console.commands"
       ]
     },
 
@@ -45,6 +48,9 @@
         "@pid.factory",
         "@runner.factory",
         "%pool.serviceConfig%"
+      ],
+      "tags": [
+        "console.commands"
       ]
     },
 
@@ -53,6 +59,9 @@
       "arguments": [
         "%thread.commandName%",
         "@runner.factory"
+      ],
+      "tags": [
+        "console.commands"
       ]
     }
   }
