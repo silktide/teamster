@@ -122,12 +122,13 @@ class ProcessRunnerTest extends \PHPUnit_Framework_TestCase
     /**
      * @dataProvider nonBlockingProvider
      *
+     * @param $timeout
      * @param bool $wait
      * @param bool $finish
      * @param string $output
      * @param string $expectedOutput
      */
-    public function testNonBlocking($wait, $finish, $output, $expectedOutput)
+    public function testNonBlocking($timeout, $wait, $finish, $output, $expectedOutput)
     {
         $this->pid->shouldReceive("getPid")->withArgs([true])->andThrow("Silktide\\Teamster\\Exception\\PidException");
         $this->pid->shouldReceive("cleanPid")->once()->andReturn(true);
@@ -137,7 +138,6 @@ class ProcessRunnerTest extends \PHPUnit_Framework_TestCase
         $spec = $this->setupOutFile($outFile);
 
         // setup command
-        $timeout = 200000; // micro seconds
         $command = "php -r \"usleep($timeout); echo '$output';\"";
 
         // do the test
@@ -159,18 +159,21 @@ class ProcessRunnerTest extends \PHPUnit_Framework_TestCase
     {
         return [
             [ // naturally ending process
+                200000,
                 true,   // wait for it to end
                 false,  // don't try to finish
                 "output",
                 "output"
             ],
             [ // forceably end process
+                1000000,
                 false,  // don't wait
                 true,   // call finish
                 "output",
                 ""      // expect no output
             ],
             [ // clean up process
+                200000,
                 true,   // wait
                 true,   // and call finish
                 "output",
