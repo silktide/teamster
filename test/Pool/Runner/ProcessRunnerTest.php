@@ -166,7 +166,7 @@ class ProcessRunnerTest extends \PHPUnit_Framework_TestCase
                 "output"
             ],
             [ // forceably end process
-                1000000,
+                10000000,
                 false,  // don't wait
                 true,   // call finish
                 "output",
