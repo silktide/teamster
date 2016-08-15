@@ -258,6 +258,7 @@ class ProcessRunner implements RunnerInterface
             $terminating = false;
             do {
                 if (!$terminating && (($startTime - microtime(true)) > self::TERMINATE_TIMEOUT)) {
+                    // terminate the process with extreme prejudice
                     proc_terminate($this->process, SIGKILL);
                     $terminating = true;
                 }
