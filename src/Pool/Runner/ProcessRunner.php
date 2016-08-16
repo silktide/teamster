@@ -20,6 +20,7 @@ class ProcessRunner implements RunnerInterface
     const PROCESS_CHECK_INTERVAL = 250000; // micro seconds
     const DEFAULT_WAIT_TIMEOUT = 20; // time to wait for an existing process to finish, in seconds
     const DEFAULT_PROCESS_TIMEOUT = 20; // time to wait for our new process to finish, in seconds
+    const TERMINATE_TIMEOUT = 180; // time to wait for a process to obey sigterm before we sigkill it
 
     /**
      * @var PidFactoryInterface
@@ -251,13 +252,19 @@ class ProcessRunner implements RunnerInterface
         // check if the process is still running
         $status = proc_get_status($this->process);
         if ($status["running"]) {
-            // terminate the process
+            // terminate the process kindly
             proc_terminate($this->process, SIGTERM);
+            $startTime = microtime(true);
+            $terminating = false;
             do {
+                if (!$terminating && ((microtime(true) - $startTime) > self::TERMINATE_TIMEOUT)) {
+                    // terminate the process with extreme prejudice
+                    proc_terminate($this->process, SIGKILL);
+                    $terminating = true;
+                }
                 // ... and wait for confirmation
                 usleep(self::PROCESS_CHECK_INTERVAL);
                 $status = proc_get_status($this->process);
-
             } while ($status["running"]);
         }
 
