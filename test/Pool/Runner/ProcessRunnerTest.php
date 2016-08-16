@@ -138,7 +138,7 @@ class ProcessRunnerTest extends \PHPUnit_Framework_TestCase
         $spec = $this->setupOutFile($outFile);
 
         // setup command
-        $command = "php -r \"usleep($timeout); echo '$output';\"";
+        $command = "php -r \"\\\$s = microtime(true); do {usleep($timeout / 4);} while (microtime(true) - \\\$s < $timeout / 1000000); echo '$output';\"";
 
         // do the test
         $runner = new ProcessRunner($this->pidFactory, $spec, "dud", 1, 5, 5);
@@ -165,7 +165,7 @@ class ProcessRunnerTest extends \PHPUnit_Framework_TestCase
                 "output",
                 "output"
             ],
-            [ // forceably end process
+            [ // forcibly end process
                 10000000,
                 false,  // don't wait
                 true,   // call finish
