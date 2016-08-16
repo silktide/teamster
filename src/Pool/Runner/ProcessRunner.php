@@ -20,7 +20,7 @@ class ProcessRunner implements RunnerInterface
     const PROCESS_CHECK_INTERVAL = 250000; // micro seconds
     const DEFAULT_WAIT_TIMEOUT = 20; // time to wait for an existing process to finish, in seconds
     const DEFAULT_PROCESS_TIMEOUT = 20; // time to wait for our new process to finish, in seconds
-    const TERMINATE_TIMEOUT = 60; // time to wait for a process to obey sigterm before we sigkill it
+    const TERMINATE_TIMEOUT = 180; // time to wait for a process to obey sigterm before we sigkill it
 
     /**
      * @var PidFactoryInterface
